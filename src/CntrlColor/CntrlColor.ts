@@ -20,6 +20,10 @@ interface OklchColorData {
 
 export type ColorData = RgbaColorData | OklchColorData;
 
+const parseColor = ColorParser();
+const parsedColors = new Map<string, CntrlColor>();
+const MAX_PARSED_COLORS = 1000;
+
 export abstract class CntrlColor {
   public static rgba(r: number, g: number, b: number, a: number = 1): CntrlColor {
     return new RgbaColor(r, g, b, a);
@@ -37,13 +41,12 @@ export abstract class CntrlColor {
   }
 
   public static parse(source: string): CntrlColor {
-    const result = ColorParser()(source, 0);
-    const token = result.unwrap();
-    switch (token.type) {
-      case 'rgba': return new RgbaColor(token.value.r, token.value.g, token.value.b, token.value.a);
-      case 'oklch': return new OklchColor(token.value.l, token.value.c, token.value.h, token.value.a);
-      default: throw new Error('current color format isn\'t supported');
-    }
+    const parsed = parsedColors.get(source);
+    if (parsed) return parsed;
+    const color = parseSource(source);
+    if (parsedColors.size >= MAX_PARSED_COLORS) parsedColors.clear();
+    parsedColors.set(source, color);
+    return color;
   }
 
   public fmt(format: 'rgba' | 'hex' | 'oklch', alpha?: number): string {
@@ -200,6 +203,15 @@ export class OklchColor extends CntrlColor {
     const h = getRangeValue(amount, this.hue, targetH);
     const a = getRangeValue(amount, this.alpha, targetA);
     return CntrlColor.from({ type: 'oklch', l, c, h, a: parseFloat(a.toFixed(2)) });
+  }
+}
+
+function parseSource(source: string): CntrlColor {
+  const token = parseColor(source, 0).unwrap();
+  switch (token.type) {
+    case 'rgba': return new RgbaColor(token.value.r, token.value.g, token.value.b, token.value.a);
+    case 'oklch': return new OklchColor(token.value.l, token.value.c, token.value.h, token.value.a);
+    default: throw new Error('current color format isn\'t supported');
   }
 }
 
