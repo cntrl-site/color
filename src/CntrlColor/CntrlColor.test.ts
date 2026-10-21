@@ -49,6 +49,26 @@ describe('CntrlColor', () => {
     expect(cntrlColor.fmt('oklch')).toBeDefined();
     expect(cntrlColor.fmt('rgba')).toBe('rgba(0, 255, 0, 1)');
   });
+  it('throws ParseError when the source is not a supported color', () => {
+    expect(() => CntrlColor.parse('transparent')).toThrow(Error);
+    expect(() => CntrlColor.parse('transparent')).toThrow(expect.objectContaining({
+      name: 'ParseError',
+      index: 0,
+      message: expect.stringMatching(/^Multiple errors occured:/)
+    }));
+  });
+  it('returns the same color for a repeated source', () => {
+    const color = 'oklch(0.6 0.1 120 / 1)';
+    expect(CntrlColor.parse(color)).toBe(CntrlColor.parse(color));
+  });
+  it('forgets parsed colors once the cache is full', () => {
+    const color = CntrlColor.parse('rgba(1, 2, 3, 1)');
+    for (let i = 0; i < 10000; i++) {
+      CntrlColor.parse(`rgba(${i}, 0, 0, 1)`);
+    }
+    expect(CntrlColor.parse('rgba(1, 2, 3, 1)')).not.toBe(color);
+    expect(CntrlColor.parse('rgba(1, 2, 3, 1)').getRgba()).toEqual(color.getRgba());
+  });
   it('returns color alpha', () => {
     const cntrlColor1 = CntrlColor.rgba(255, 0, 0, 0.5);
     expect(cntrlColor1.getAlpha()).toBe(0.5);

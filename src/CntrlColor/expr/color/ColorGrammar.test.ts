@@ -1,3 +1,4 @@
+import { ParseError } from '../ParseError';
 import { ColorParser } from './ColorGrammar';
 
 describe('ColorGrammar', () => {
@@ -69,5 +70,12 @@ describe('ColorGrammar', () => {
       expect(result.value.h).toBeCloseTo(0);
       expect(result.value.a).toBeCloseTo(1);
     }
+  });
+
+  it('should report a failed match without capturing a stack', () => {
+    const parse = ColorParser();
+    const error = parse('transparent', 0).unwrapErr();
+    expect(error).toBeInstanceOf(ParseError);
+    expect(error).not.toHaveProperty('stack');
   });
 });

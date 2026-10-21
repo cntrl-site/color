@@ -1,3 +1,5 @@
+import { ParseError } from './ParseError';
+
 export abstract class Result<V, E> {
   static Ok<V, E>(value: V) { return new Ok<V, E>(value); }
   static Err<V, E>(error: E) { return new Err<V, E>(error); }
@@ -31,7 +33,7 @@ export class Err<V,E> extends Result<V,E> {
     Object.freeze(this);
   }
   isErr() { return true; }
-  unwrap(): V { throw this.error; }
+  unwrap(): V { throw this.error instanceof ParseError ? this.error.toError() : this.error; }
   unwrapErr(): E { return this.error; }
   // @ts-ignore
   map<R>(mapFn: (value: any) => R): Result<R, E> { return this; }
